@@ -11,3 +11,14 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+
+  coredns:
+    image: ghcr.io/tofudns/coredns:1.12.0-postgresql
+    expose:
+      - '53'
+      - '53/udp'
+    ports:
+      - '53:53'
+      - '53:53/udp'
+    volumes:
+      - ./Corefile:/etc/coredns/Corefile

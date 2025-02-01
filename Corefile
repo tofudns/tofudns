@@ -1,0 +1,13 @@
+. {
+    postgresql {
+        datasource "host=postgres port=5432 user=tofudns password=tofudns dbname=tofudns sslmode=disable"
+        table_prefix "coredns_"
+        max_lifetime "1m"
+        max_open_connections 10
+        max_idle_connections 10
+        ttl 360
+        zone_update_interval 10m
+    }
+    log
+    errors
+}
