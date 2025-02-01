@@ -1,6 +1,6 @@
-# Sample gRPC Service
+# tofudns
 
-This project demonstrates a simple gRPC service using Go, Chi, Buf, and Connect-Go.
+authoritative dns for soy milk fans
 
 ## Prerequisites
 
@@ -32,3 +32,9 @@ This project demonstrates a simple gRPC service using Go, Chi, Buf, and Connect-
    task compose:down
    ```
    The service will stop and the containers will be removed.
+
+## License
+
+Copyright tofudns team
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, version 3.
