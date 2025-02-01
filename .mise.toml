@@ -1,0 +1,14 @@
+[tools]
+# Required tools
+go = "1.23.0"
+task = "3.37.2"
+
+# Go tools
+"go:github.com/golangci/golangci-lint/cmd/golangci-lint" = "1.57.2"
+
+[env]
+PATH = "${PATH}:${HOME}/go/bin"
+
+[tasks]
+generate = "task generate"
+clean = "task clean"

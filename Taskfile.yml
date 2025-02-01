@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+  generate:
+    cmds:
+      - go generate ./...
+
+  clean:
+    cmds:
+      - rm -rf gen
+
+  default:
+    cmds:
+      - task: generate
+
+  build:
+    cmds:
+      - go build -o tofudns ./cmd/service/main.go
+
+  run:
+    cmds:
+      - go run ./cmd/service/main.go
