@@ -32,3 +32,7 @@ tasks:
   run:
     cmds:
       - air
+
+  test:dig:
+    cmds:
+      - docker exec -it tofudns-testing-1 dig @coredns -p 53 +short A example.org

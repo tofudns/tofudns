@@ -11,9 +11,13 @@ services:
       - "5432:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - tofudns
 
   coredns:
     image: ghcr.io/tofudns/coredns:1.12.0-postgresql
+    depends_on:
+      - postgres
     expose:
       - '53'
       - '53/udp'
@@ -22,3 +26,19 @@ services:
       - '53:53/udp'
     volumes:
       - ./Corefile:/etc/coredns/Corefile
+    networks:
+      - tofudns
+
+  testing:
+    build:
+      context: .
+      dockerfile: Dockerfile.testing
+    depends_on:
+      - coredns
+      - postgres
+    networks:
+      - tofudns
+
+networks:
+  tofudns:
+    driver: bridge
