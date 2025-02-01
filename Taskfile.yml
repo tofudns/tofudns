@@ -25,6 +25,10 @@ tasks:
     cmds:
       - docker compose up -d
 
+  compose:up:debug:
+    cmds:
+      - docker compose up
+
   compose:down:
     cmds:
       - docker compose down

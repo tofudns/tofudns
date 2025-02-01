@@ -1,0 +1,17 @@
+.:53 {
+    log
+    errors
+    health {
+        lameduck 5s
+    }
+    ready
+    cache 30
+    acl {
+        allow net 0.0.0.0/0
+    }
+    chaos tofudns info@tofudns.net
+    postgresql {
+        datasource "host=postgres user=tofudns password=tofudns dbname=tofudns port=5432 sslmode=disable"
+        ttl 30
+    }
+}

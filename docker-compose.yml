@@ -19,13 +19,13 @@ services:
     depends_on:
       - postgres
     expose:
-      - '53'
-      - '53/udp'
+      - "53"
+      - "53/udp"
     ports:
-      - '53:53'
-      - '53:53/udp'
+      - "53:53"
+      - "53:53/udp"
     volumes:
-      - ./Corefile:/etc/coredns/Corefile
+      - ./config/Corefile:/Corefile
     networks:
       - tofudns
 
