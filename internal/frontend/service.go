@@ -3,9 +3,10 @@ package frontend
 import (
 	"embed"
 	"html/template"
+	"log/slog"
 	"net/http"
 
-	"golang.org/x/exp/slog"
+	"github.com/tofudns/tofudns/internal/storage"
 )
 
 //go:embed templates/*
@@ -15,7 +16,10 @@ type Service struct {
 	templates *template.Template
 }
 
-func New() (*Service, error) {
+func New(
+	logger *slog.Logger,
+	dbClient storage.Querier,
+) (*Service, error) {
 	// Parse all templates from the embedded filesystem
 	tmpl, err := template.ParseFS(templateFS, "templates/*.html")
 	if err != nil {

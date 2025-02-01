@@ -1,0 +1,13 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "queries.sql"
+    schema: "migrations"
+    gen:
+      go:
+        package: "storage"
+        out: "."
+        sql_package: "database/sql"
+        emit_interface: true
+    rules:
+    - "sqlc/db-prepare"

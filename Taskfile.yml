@@ -17,6 +17,18 @@ tasks:
     cmds:
       - go build -o tofudns ./cmd/service/main.go
 
+  compose:
+    cmds:
+      - task: "compose:{{.CLI_ARGS}}"
+
+  compose:up:
+    cmds:
+      - docker compose up -d
+
+  compose:down:
+    cmds:
+      - docker compose down
+
   run:
     cmds:
       - go run ./cmd/service/main.go

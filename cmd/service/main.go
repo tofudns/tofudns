@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -9,17 +12,24 @@ import (
 	"syscall"
 	"time"
 
+	_ "embed"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/kelseyhightower/envconfig"
-	"golang.org/x/exp/slog"
 
 	"github.com/tofudns/tofudns/internal/frontend"
+	"github.com/tofudns/tofudns/internal/storage"
 )
 
 type Config struct {
-	Port     string `envconfig:"PORT" default:"8080"`
-	LogLevel string `envconfig:"LOG_LEVEL" default:"debug"`
+	Port           string `envconfig:"PORT" default:"8080"`
+	LogLevel       string `envconfig:"LOG_LEVEL" default:"debug"`
+	DatabaseDriver string `envconfig:"DATABASE_DRIVER" default:"postgres"`
+	DatabaseURL    string `envconfig:"DATABASE_URL" default:"postgres://tofudns:tofudns@localhost:5432/tofudns?sslmode=disable"`
 }
 
 func main() {
@@ -52,13 +62,32 @@ func main() {
 	)
 	slog.SetDefault(logger)
 
+	// Setup database client
+	db, err := sql.Open(config.DatabaseDriver, config.DatabaseURL)
+	if err != nil {
+		logger.Error("Failed to create database client", "error", err)
+		os.Exit(1)
+	}
+
+	// Run database migrations
+	if err := runDatabaseMigrations(db); err != nil {
+		logger.Error("Failed to run database migrations", "error", err)
+		os.Exit(1)
+	}
+
+	// Construct the database client
+	dbClient := storage.New(db)
+
 	// Create a new Chi router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
 	// Construct frontend service
-	frontendService, err := frontend.New()
+	frontendService, err := frontend.New(
+		logger,
+		dbClient,
+	)
 	if err != nil {
 		logger.Error("Failed to create frontend service", "error", err)
 		os.Exit(1)
@@ -103,4 +132,37 @@ func main() {
 	}
 
 	logger.Info("Server shutdown")
+}
+
+func runDatabaseMigrations(db *sql.DB) error {
+	// Construct the database driver
+	migrateDatabaseDriver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		return err
+	}
+
+	// Construct the migration source
+	migrateSourceDriver, err := iofs.New(storage.MigrationsFS, "migrations")
+	if err != nil {
+		return err
+	}
+
+	// Create migration instance
+	migrationClient, err := migrate.NewWithInstance(
+		"iofs",
+		migrateSourceDriver,
+		"postgres",
+		migrateDatabaseDriver,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Run migrations
+	err = migrationClient.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+
+	return nil
 }

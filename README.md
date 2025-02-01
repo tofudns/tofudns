@@ -22,6 +22,13 @@ This project demonstrates a simple gRPC service using Go, Chi, Buf, and Connect-
 
 3. Run the service:
    ```
+   task compose:up
    task run
    ```
    The service will start and listen on port 8080.
+
+4. Stop the service:
+   ```
+   task compose:down
+   ```
+   The service will stop and the containers will be removed.
