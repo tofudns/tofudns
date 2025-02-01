@@ -210,7 +210,7 @@ func (q *Queries) ListRecordsByType(ctx context.Context, arg ListRecordsByTypePa
 const listRecordsByZone = `-- name: ListRecordsByZone :many
 SELECT id, zone, name, ttl, content, record_type FROM coredns_records
 WHERE zone = $1
-ORDER BY name
+ORDER BY name, record_type
 `
 
 func (q *Queries) ListRecordsByZone(ctx context.Context, zone string) ([]CorednsRecord, error) {
@@ -233,6 +233,35 @@ func (q *Queries) ListRecordsByZone(ctx context.Context, zone string) ([]Coredns
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listZones = `-- name: ListZones :many
+SELECT DISTINCT zone 
+FROM coredns_records 
+ORDER BY zone
+`
+
+func (q *Queries) ListZones(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listZones)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var zone string
+		if err := rows.Scan(&zone); err != nil {
+			return nil, err
+		}
+		items = append(items, zone)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

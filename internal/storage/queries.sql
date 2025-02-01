@@ -5,7 +5,7 @@ WHERE id = $1 AND zone = $2;
 -- name: ListRecordsByZone :many
 SELECT * FROM coredns_records
 WHERE zone = $1
-ORDER BY name;
+ORDER BY name, record_type;
 
 -- name: ListRecordsByName :many
 SELECT * FROM coredns_records
@@ -46,3 +46,8 @@ WHERE id = $1 AND zone = $2;
 SELECT * FROM coredns_records
 WHERE zone = $1
 ORDER BY name, record_type;
+
+-- name: ListZones :many
+SELECT DISTINCT zone 
+FROM coredns_records 
+ORDER BY zone;

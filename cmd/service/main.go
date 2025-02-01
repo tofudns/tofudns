@@ -22,6 +22,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/tofudns/tofudns/internal/frontend"
+	"github.com/tofudns/tofudns/internal/recordmanager"
 	"github.com/tofudns/tofudns/internal/storage"
 )
 
@@ -78,16 +79,16 @@ func main() {
 	// Construct the database client
 	dbClient := storage.New(db)
 
+	// Create the record manager
+	records := recordmanager.New(dbClient)
+
 	// Create a new Chi router
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Construct frontend service
-	frontendService, err := frontend.New(
-		logger,
-		dbClient,
-	)
+	// Create the frontend service
+	frontendService, err := frontend.New(logger, records)
 	if err != nil {
 		logger.Error("Failed to create frontend service", "error", err)
 		os.Exit(1)

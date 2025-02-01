@@ -312,6 +312,45 @@ func (c *MockQuerierListRecordsByZoneCall) DoAndReturn(f func(context.Context, s
 	return c
 }
 
+// ListZones mocks base method.
+func (m *MockQuerier) ListZones(ctx context.Context) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListZones", ctx)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListZones indicates an expected call of ListZones.
+func (mr *MockQuerierMockRecorder) ListZones(ctx any) *MockQuerierListZonesCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListZones", reflect.TypeOf((*MockQuerier)(nil).ListZones), ctx)
+	return &MockQuerierListZonesCall{Call: call}
+}
+
+// MockQuerierListZonesCall wrap *gomock.Call
+type MockQuerierListZonesCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockQuerierListZonesCall) Return(arg0 []string, arg1 error) *MockQuerierListZonesCall {
+	c.Call = c.Call.Return(arg0, arg1)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockQuerierListZonesCall) Do(f func(context.Context) ([]string, error)) *MockQuerierListZonesCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockQuerierListZonesCall) DoAndReturn(f func(context.Context) ([]string, error)) *MockQuerierListZonesCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
 // UpdateRecord mocks base method.
 func (m *MockQuerier) UpdateRecord(ctx context.Context, arg UpdateRecordParams) (CorednsRecord, error) {
 	m.ctrl.T.Helper()

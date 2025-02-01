@@ -6,19 +6,21 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/tofudns/tofudns/internal/storage"
+	"github.com/tofudns/tofudns/internal/recordmanager"
 )
 
 //go:embed templates/*
 var templateFS embed.FS
 
 type Service struct {
+	logger    *slog.Logger
+	records   *recordmanager.RecordManager
 	templates *template.Template
 }
 
 func New(
 	logger *slog.Logger,
-	dbClient storage.Querier,
+	records *recordmanager.RecordManager,
 ) (*Service, error) {
 	// Parse all templates from the embedded filesystem
 	tmpl, err := template.ParseFS(templateFS, "templates/*.html")
@@ -27,6 +29,8 @@ func New(
 	}
 
 	return &Service{
+		logger:    logger,
+		records:   records,
 		templates: tmpl,
 	}, nil
 }

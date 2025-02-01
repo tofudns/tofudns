@@ -16,6 +16,7 @@ type Querier interface {
 	ListRecordsByName(ctx context.Context, arg ListRecordsByNameParams) ([]CorednsRecord, error)
 	ListRecordsByType(ctx context.Context, arg ListRecordsByTypeParams) ([]CorednsRecord, error)
 	ListRecordsByZone(ctx context.Context, zone string) ([]CorednsRecord, error)
+	ListZones(ctx context.Context) ([]string, error)
 	UpdateRecord(ctx context.Context, arg UpdateRecordParams) (CorednsRecord, error)
 }
 
