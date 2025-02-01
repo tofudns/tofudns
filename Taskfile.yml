@@ -31,4 +31,4 @@ tasks:
 
   run:
     cmds:
-      - go run ./cmd/service/main.go
+      - air
