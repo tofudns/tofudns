@@ -9,9 +9,6 @@ task = "3.37.2"
 "go:go.uber.org/mock/mockgen" = "0.5.0"
 "go:github.com/air-verse/air" = "1.61.7"
 
-[env]
-PATH = "${PATH}:${HOME}/go/bin"
-
 [tasks]
 generate = "task generate"
 clean = "task clean"
