@@ -35,6 +35,7 @@ tasks:
 
   run:
     cmds:
+      - go mod tidy
       - air
 
   test:dig:
