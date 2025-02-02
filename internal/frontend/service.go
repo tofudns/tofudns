@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
-	"strings"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/tofudns/tofudns/internal/recordmanager"
@@ -41,6 +41,8 @@ func (s *Service) Router(r chi.Router) {
 	r.Get("/", s.handleZoneList)
 	r.Post("/new/zone", s.handleNewZone)
 	r.Get("/zones/{zone}", s.handleZoneDetail)
+	r.Get("/zones/{zone}/records/{recordId}/delete", s.handleRecordDeleteForm)
+	r.Post("/zones/{zone}/records/{recordId}/delete", s.handleRecordDelete)
 }
 
 func (s *Service) handleZoneList(w http.ResponseWriter, r *http.Request) {
@@ -52,18 +54,9 @@ func (s *Service) handleZoneList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a new slice with zones without the trailing dot
-	zonesWithoutDots := make([]string, len(zones))
-	for i, zone := range zones {
-		if len(zone) > 0 {
-			zonesWithoutDots[i] = zone[:len(zone)-1]
-		}
-	}
-
 	data := map[string]interface{}{
-		"Zones": zonesWithoutDots,
+		"Zones": zones,
 	}
-
 	if err := s.templates.ExecuteTemplate(w, "zone_list.html", data); err != nil {
 		slog.Error("Failed to execute template", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -87,11 +80,6 @@ func (s *Service) handleNewZone(w http.ResponseWriter, r *http.Request) {
 	if zone == "" {
 		http.Error(w, "Zone is required", http.StatusBadRequest)
 		return
-	}
-
-	// Check if zone ends with a dot, add one if it doesn't
-	if !strings.HasSuffix(zone, ".") {
-		zone += "."
 	}
 
 	record := recordmanager.Record{
@@ -130,8 +118,7 @@ func (s *Service) handleZoneDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	zoneFQDN := zone + "."
-	records, err := s.records.ListRecordsByZone(ctx, zoneFQDN)
+	records, err := s.records.ListRecordsByZone(ctx, zone)
 	if err != nil {
 		slog.Error("Failed to retrieve zone records", "error", err, "zone", zone)
 		http.Error(w, "Failed to retrieve zone records", http.StatusInternalServerError)
@@ -148,4 +135,64 @@ func (s *Service) handleZoneDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Service) handleRecordDeleteForm(w http.ResponseWriter, r *http.Request) {
+	zone := chi.URLParam(r, "zone")
+	if zone == "" {
+		http.Error(w, "Zone is required", http.StatusBadRequest)
+		return
+	}
+
+	recordIdStr := chi.URLParam(r, "recordId")
+	if recordIdStr == "" {
+		http.Error(w, "Record ID is required", http.StatusBadRequest)
+		return
+	}
+	recordId, err := strconv.ParseInt(recordIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Record ID is not a number", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	record, err := s.records.GetRecord(ctx, recordId, zone)
+	if err != nil {
+		slog.Error("Failed to retrieve record", "error", err, "zone", zone)
+		http.Error(w, "Failed to retrieve record", http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"Zone":   zone,
+		"Record": record,
+	}
+	if err := s.templates.ExecuteTemplate(w, "record_delete.html", data); err != nil {
+		slog.Error("Failed to execute template", "error", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Service) handleRecordDelete(w http.ResponseWriter, r *http.Request) {
+	zone := chi.URLParam(r, "zone")
+	if zone == "" {
+		http.Error(w, "Zone is required", http.StatusBadRequest)
+		return
+	}
+
+	recordIdStr := chi.URLParam(r, "recordId")
+	if recordIdStr == "" {
+		http.Error(w, "Record ID is required", http.StatusBadRequest)
+		return
+	}
+	recordId, err := strconv.ParseInt(recordIdStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Record ID is not a number", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	s.records.DeleteRecord(ctx, recordId, zone)
+	http.Redirect(w, r, "/zones/"+zone, http.StatusSeeOther)
 }

@@ -17,6 +17,7 @@
                             <th>Name</th>
                             <th>Value</th>
                             <th>TTL</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -26,6 +27,11 @@
                             <td>{{.Name}}</td>
                             <td>{{.Content.Value}}</td>
                             <td style="text-align: center;">{{.Ttl.Value}}</td>
+                            <td>
+                                [
+                                <a href="/zones/{{.Zone}}/records/{{.ID}}/delete" style="color: black;">delete</a>
+                                ]
+                            </td>
                         </tr>
                         {{end}}
                     </tbody>
