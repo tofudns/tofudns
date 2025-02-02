@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/tofudns/tofudns/internal/recordmanager"
@@ -51,8 +52,16 @@ func (s *Service) handleZoneList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create a new slice with zones without the trailing dot
+	zonesWithoutDots := make([]string, len(zones))
+	for i, zone := range zones {
+		if len(zone) > 0 {
+			zonesWithoutDots[i] = zone[:len(zone)-1]
+		}
+	}
+
 	data := map[string]interface{}{
-		"Zones": zones,
+		"Zones": zonesWithoutDots,
 	}
 
 	if err := s.templates.ExecuteTemplate(w, "zone_list.html", data); err != nil {
@@ -78,6 +87,11 @@ func (s *Service) handleNewZone(w http.ResponseWriter, r *http.Request) {
 	if zone == "" {
 		http.Error(w, "Zone is required", http.StatusBadRequest)
 		return
+	}
+
+	// Check if zone ends with a dot, add one if it doesn't
+	if !strings.HasSuffix(zone, ".") {
+		zone += "."
 	}
 
 	record := recordmanager.Record{
@@ -116,8 +130,8 @@ func (s *Service) handleZoneDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-
-	records, err := s.records.ListRecordsByZone(ctx, zone)
+	zoneFQDN := zone + "."
+	records, err := s.records.ListRecordsByZone(ctx, zoneFQDN)
 	if err != nil {
 		slog.Error("Failed to retrieve zone records", "error", err, "zone", zone)
 		http.Error(w, "Failed to retrieve zone records", http.StatusInternalServerError)
