@@ -7,7 +7,6 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.18.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	go.uber.org/mock v0.5.0
-	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 )
 
 require (

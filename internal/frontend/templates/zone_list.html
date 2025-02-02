@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    {{template "head" .}}
+    <body>
+        <nav>
+            <a href="/">tofudns</a>
+        </nav>
+        <main>
+            <form action="/new/zone" method="post">
+                <label>zone:</label>
+                <input type="text" name="zone" placeholder="example.com">
+                <input type="submit" value="save">
+            </form>
+            <ul>
+                {{range .Zones}}
+                <li>
+                    <a href="/zones/{{.}}">{{.}}</a>
+                </li>
+                {{end}}
+            </ul>
+        </main>
+    </body>
+</html>

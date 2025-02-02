@@ -94,8 +94,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Mount the frontend handler
-	r.Mount("/", frontendService)
+	// Route the frontend handler
+	r.Route("/", frontendService.Router)
 
 	// Set up the server
 	srv := &http.Server{
