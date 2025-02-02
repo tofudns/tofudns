@@ -5,13 +5,23 @@
     <title>tofudns</title>
     <style>
         body { font-family: sans-serif; }
-        nav { margin-bottom: 24px; }
-        nav a { font-size: 20px; color: #8c8c8c; text-decoration: none; }
+        h2 { font-weight: normal; font-size: 22px; margin: 16px 0; }
+        nav a { font-size: 80px; color: #8c8c8c; text-decoration: none; }
         nav a:hover { text-decoration: underline; }
         form { max-width: 300px; }
         label { display:inline-block; margin-bottom: 4px; }
-        input[type="text"] { width: 100%; }
-        input[type="submit"] { cursor: pointer; background: black; color: white; border: none; padding: 5px 13px; margin-top: 8px; }
+        input[type="text"] { width: 100%; box-sizing: border-box; }
+        input[type="submit"] {
+            cursor: pointer;
+            background: #ff000066;
+            color: white;
+            border: none;
+            padding: 5px 13px;
+            margin-top: 8px;
+            transition: all ease-in 0.15s;
+        }
+        input[type="submit"]:hover { background: #ff0000aa; }
+        input[type="submit"]:active { background: #ff0000; transition: none; }
         table { border-collapse: collapse; margin: 16px 0; }
         th { border: 1px solid #ddd; padding: 4px 16px; }
         td { border: 1px solid #ddd; padding: 4px; text-align: left; }
