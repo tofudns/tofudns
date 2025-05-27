@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "queries.sql"
-    schema: "migrations"
+    queries: "internal/storage/queries.sql"
+    schema: "internal/storage/migrations"
     gen:
       go:
         package: "storage"
-        out: "."
+        out: "internal/storage"
         sql_package: "database/sql"
         emit_interface: true
     rules:

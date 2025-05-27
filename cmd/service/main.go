@@ -21,6 +21,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/kelseyhightower/envconfig"
 
+	"github.com/tofudns/tofudns/internal/email"
 	"github.com/tofudns/tofudns/internal/frontend"
 	"github.com/tofudns/tofudns/internal/recordmanager"
 	"github.com/tofudns/tofudns/internal/storage"
@@ -31,6 +32,11 @@ type Config struct {
 	LogLevel       string `envconfig:"LOG_LEVEL" default:"debug"`
 	DatabaseDriver string `envconfig:"DATABASE_DRIVER" default:"postgres"`
 	DatabaseURL    string `envconfig:"DATABASE_URL" default:"postgres://tofudns:tofudns@localhost:5432/tofudns?sslmode=disable"`
+	JWTSecret      string `envconfig:"JWT_SECRET" default:"tofudns_jwt_secret_replace_in_production"`
+	Postmark       struct {
+		ServerToken string `envconfig:"POSTMARK_SERVER_TOKEN" required:"true"`
+		FromEmail   string `envconfig:"POSTMARK_EMAIL_FROM" default:"noreply@tofudns.net"`
+	}
 }
 
 func main() {
@@ -87,8 +93,14 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// Create the email service
+	emailService := email.NewPostmarkService(email.PostmarkConfig{
+		ServerToken: config.Postmark.ServerToken,
+		FromEmail:   config.Postmark.FromEmail,
+	})
+
 	// Create the frontend service
-	frontendService, err := frontend.New(logger, records)
+	frontendService, err := frontend.New(logger, records, dbClient, emailService, config.JWTSecret)
 	if err != nil {
 		logger.Error("Failed to create frontend service", "error", err)
 		os.Exit(1)

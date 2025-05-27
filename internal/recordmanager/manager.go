@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/tofudns/tofudns/internal/storage"
 )
 
@@ -55,6 +56,7 @@ func (m *RecordManager) CreateRecord(ctx context.Context, record *Record) (*Reco
 
 	// Create the record
 	dbRecord, err := m.querier.CreateRecord(ctx, storage.CreateRecordParams{
+		UserID:     record.UserID,
 		Zone:       record.Zone,
 		Name:       record.Name,
 		Ttl:        record.Ttl,
@@ -69,10 +71,11 @@ func (m *RecordManager) CreateRecord(ctx context.Context, record *Record) (*Reco
 }
 
 // GetRecord retrieves a DNS record by ID and zone
-func (m *RecordManager) GetRecord(ctx context.Context, id int64, zone string) (*Record, error) {
+func (m *RecordManager) GetRecord(ctx context.Context, id int64, zone string, userID uuid.UUID) (*Record, error) {
 	record, err := m.querier.GetRecordByID(ctx, storage.GetRecordByIDParams{
-		ID:   id,
-		Zone: zone,
+		ID:     id,
+		Zone:   zone,
+		UserID: userID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get record: %w", err)
@@ -121,6 +124,7 @@ func (m *RecordManager) UpdateRecord(ctx context.Context, record *Record) (*Reco
 		Ttl:        record.Ttl,
 		Content:    sql.NullString{String: string(contentJSON), Valid: true},
 		RecordType: record.RecordType,
+		UserID:     record.UserID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to update record: %w", err)
@@ -130,10 +134,11 @@ func (m *RecordManager) UpdateRecord(ctx context.Context, record *Record) (*Reco
 }
 
 // DeleteRecord deletes a DNS record
-func (m *RecordManager) DeleteRecord(ctx context.Context, id int64, zone string) error {
+func (m *RecordManager) DeleteRecord(ctx context.Context, id int64, zone string, userID uuid.UUID) error {
 	err := m.querier.DeleteRecord(ctx, storage.DeleteRecordParams{
-		ID:   id,
-		Zone: zone,
+		ID:     id,
+		Zone:   zone,
+		UserID: userID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to delete record: %w", err)
@@ -143,8 +148,11 @@ func (m *RecordManager) DeleteRecord(ctx context.Context, id int64, zone string)
 }
 
 // ListRecordsByZone lists all records in a zone
-func (m *RecordManager) ListRecordsByZone(ctx context.Context, zone string) ([]*Record, error) {
-	records, err := m.querier.ListRecordsByZone(ctx, zone)
+func (m *RecordManager) ListRecordsByZone(ctx context.Context, zone string, userID uuid.UUID) ([]*Record, error) {
+	records, err := m.querier.ListRecordsByZone(ctx, storage.ListRecordsByZoneParams{
+		Zone:   zone,
+		UserID: userID,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list records: %w", err)
 	}
@@ -161,8 +169,8 @@ func (m *RecordManager) ListRecordsByZone(ctx context.Context, zone string) ([]*
 }
 
 // ListZones lists all zones
-func (m *RecordManager) ListZones(ctx context.Context) ([]string, error) {
-	zones, err := m.querier.ListZones(ctx)
+func (m *RecordManager) ListZones(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	zones, err := m.querier.ListZones(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list zones: %w", err)
 	}
@@ -174,6 +182,7 @@ func (m *RecordManager) ListZones(ctx context.Context) ([]string, error) {
 func (m *RecordManager) storageToRecord(dbRecord *storage.CorednsRecord) (*Record, error) {
 	record := &Record{
 		ID:         dbRecord.ID,
+		UserID:     dbRecord.UserID,
 		Zone:       dbRecord.Zone,
 		Name:       dbRecord.Name,
 		RecordType: dbRecord.RecordType,

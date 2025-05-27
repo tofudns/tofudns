@@ -8,21 +8,58 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"time"
+
+	"github.com/google/uuid"
 )
+
+const createOTP = `-- name: CreateOTP :one
+
+INSERT INTO otp_codes (
+    email,
+    code,
+    expires_at
+) VALUES (
+    $1, $2, $3
+) RETURNING id, email, code, expires_at, consumed_at, created_at
+`
+
+type CreateOTPParams struct {
+	Email     string
+	Code      string
+	ExpiresAt time.Time
+}
+
+// OTP Authentication Queries
+func (q *Queries) CreateOTP(ctx context.Context, arg CreateOTPParams) (OtpCode, error) {
+	row := q.db.QueryRowContext(ctx, createOTP, arg.Email, arg.Code, arg.ExpiresAt)
+	var i OtpCode
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Code,
+		&i.ExpiresAt,
+		&i.ConsumedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
 
 const createRecord = `-- name: CreateRecord :one
 INSERT INTO coredns_records (
+    user_id,
     zone,
     name,
     ttl,
     content,
     record_type
 ) VALUES (
-    $1, $2, $3, $4, $5
-) RETURNING id, zone, name, ttl, content, record_type
+    $1, $2, $3, $4, $5, $6
+) RETURNING id, user_id, zone, name, ttl, content, record_type
 `
 
 type CreateRecordParams struct {
+	UserID     uuid.UUID
 	Zone       string
 	Name       string
 	Ttl        sql.NullInt32
@@ -32,6 +69,7 @@ type CreateRecordParams struct {
 
 func (q *Queries) CreateRecord(ctx context.Context, arg CreateRecordParams) (CorednsRecord, error) {
 	row := q.db.QueryRowContext(ctx, createRecord,
+		arg.UserID,
 		arg.Zone,
 		arg.Name,
 		arg.Ttl,
@@ -41,45 +79,91 @@ func (q *Queries) CreateRecord(ctx context.Context, arg CreateRecordParams) (Cor
 	var i CorednsRecord
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Zone,
 		&i.Name,
 		&i.Ttl,
 		&i.Content,
 		&i.RecordType,
+	)
+	return i, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (
+    email
+) VALUES (
+    $1
+) RETURNING id, email, created_at, updated_at
+`
+
+func (q *Queries) CreateUser(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const deleteRecord = `-- name: DeleteRecord :exec
 DELETE FROM coredns_records
-WHERE id = $1 AND zone = $2
+WHERE id = $1 AND zone = $2 AND user_id = $3
 `
 
 type DeleteRecordParams struct {
-	ID   int64
-	Zone string
+	ID     int64
+	Zone   string
+	UserID uuid.UUID
 }
 
 func (q *Queries) DeleteRecord(ctx context.Context, arg DeleteRecordParams) error {
-	_, err := q.db.ExecContext(ctx, deleteRecord, arg.ID, arg.Zone)
+	_, err := q.db.ExecContext(ctx, deleteRecord, arg.ID, arg.Zone, arg.UserID)
 	return err
 }
 
+const getLatestOTPByEmail = `-- name: GetLatestOTPByEmail :one
+SELECT id, email, code, expires_at, consumed_at, created_at FROM otp_codes
+WHERE email = $1 AND consumed_at IS NULL AND expires_at > NOW()
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestOTPByEmail(ctx context.Context, email string) (OtpCode, error) {
+	row := q.db.QueryRowContext(ctx, getLatestOTPByEmail, email)
+	var i OtpCode
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Code,
+		&i.ExpiresAt,
+		&i.ConsumedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getRecordByID = `-- name: GetRecordByID :one
-SELECT id, zone, name, ttl, content, record_type FROM coredns_records
-WHERE id = $1 AND zone = $2
+SELECT id, user_id, zone, name, ttl, content, record_type FROM coredns_records
+WHERE id = $1 AND zone = $2 AND user_id = $3
 `
 
 type GetRecordByIDParams struct {
-	ID   int64
-	Zone string
+	ID     int64
+	Zone   string
+	UserID uuid.UUID
 }
 
+// Records Queries
 func (q *Queries) GetRecordByID(ctx context.Context, arg GetRecordByIDParams) (CorednsRecord, error) {
-	row := q.db.QueryRowContext(ctx, getRecordByID, arg.ID, arg.Zone)
+	row := q.db.QueryRowContext(ctx, getRecordByID, arg.ID, arg.Zone, arg.UserID)
 	var i CorednsRecord
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Zone,
 		&i.Name,
 		&i.Ttl,
@@ -89,14 +173,54 @@ func (q *Queries) GetRecordByID(ctx context.Context, arg GetRecordByIDParams) (C
 	return i, err
 }
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, email, created_at, updated_at FROM users
+WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT id, email, created_at, updated_at FROM users
+WHERE id = $1
+`
+
+// User Queries
+func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listRecords = `-- name: ListRecords :many
-SELECT id, zone, name, ttl, content, record_type FROM coredns_records
-WHERE zone = $1
+SELECT id, user_id, zone, name, ttl, content, record_type FROM coredns_records
+WHERE zone = $1 AND user_id = $2
 ORDER BY name, record_type
 `
 
-func (q *Queries) ListRecords(ctx context.Context, zone string) ([]CorednsRecord, error) {
-	rows, err := q.db.QueryContext(ctx, listRecords, zone)
+type ListRecordsParams struct {
+	Zone   string
+	UserID uuid.UUID
+}
+
+func (q *Queries) ListRecords(ctx context.Context, arg ListRecordsParams) ([]CorednsRecord, error) {
+	rows, err := q.db.QueryContext(ctx, listRecords, arg.Zone, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +230,7 @@ func (q *Queries) ListRecords(ctx context.Context, zone string) ([]CorednsRecord
 		var i CorednsRecord
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Zone,
 			&i.Name,
 			&i.Ttl,
@@ -126,18 +251,19 @@ func (q *Queries) ListRecords(ctx context.Context, zone string) ([]CorednsRecord
 }
 
 const listRecordsByName = `-- name: ListRecordsByName :many
-SELECT id, zone, name, ttl, content, record_type FROM coredns_records
-WHERE zone = $1 AND name = $2
+SELECT id, user_id, zone, name, ttl, content, record_type FROM coredns_records
+WHERE zone = $1 AND name = $2 AND user_id = $3
 ORDER BY id
 `
 
 type ListRecordsByNameParams struct {
-	Zone string
-	Name string
+	Zone   string
+	Name   string
+	UserID uuid.UUID
 }
 
 func (q *Queries) ListRecordsByName(ctx context.Context, arg ListRecordsByNameParams) ([]CorednsRecord, error) {
-	rows, err := q.db.QueryContext(ctx, listRecordsByName, arg.Zone, arg.Name)
+	rows, err := q.db.QueryContext(ctx, listRecordsByName, arg.Zone, arg.Name, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +273,7 @@ func (q *Queries) ListRecordsByName(ctx context.Context, arg ListRecordsByNamePa
 		var i CorednsRecord
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Zone,
 			&i.Name,
 			&i.Ttl,
@@ -167,18 +294,19 @@ func (q *Queries) ListRecordsByName(ctx context.Context, arg ListRecordsByNamePa
 }
 
 const listRecordsByType = `-- name: ListRecordsByType :many
-SELECT id, zone, name, ttl, content, record_type FROM coredns_records
-WHERE zone = $1 AND record_type = $2
+SELECT id, user_id, zone, name, ttl, content, record_type FROM coredns_records
+WHERE zone = $1 AND record_type = $2 AND user_id = $3
 ORDER BY name
 `
 
 type ListRecordsByTypeParams struct {
 	Zone       string
 	RecordType string
+	UserID     uuid.UUID
 }
 
 func (q *Queries) ListRecordsByType(ctx context.Context, arg ListRecordsByTypeParams) ([]CorednsRecord, error) {
-	rows, err := q.db.QueryContext(ctx, listRecordsByType, arg.Zone, arg.RecordType)
+	rows, err := q.db.QueryContext(ctx, listRecordsByType, arg.Zone, arg.RecordType, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -188,6 +316,7 @@ func (q *Queries) ListRecordsByType(ctx context.Context, arg ListRecordsByTypePa
 		var i CorednsRecord
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Zone,
 			&i.Name,
 			&i.Ttl,
@@ -208,13 +337,18 @@ func (q *Queries) ListRecordsByType(ctx context.Context, arg ListRecordsByTypePa
 }
 
 const listRecordsByZone = `-- name: ListRecordsByZone :many
-SELECT id, zone, name, ttl, content, record_type FROM coredns_records
-WHERE zone = $1
+SELECT id, user_id, zone, name, ttl, content, record_type FROM coredns_records
+WHERE zone = $1 AND user_id = $2
 ORDER BY name, record_type
 `
 
-func (q *Queries) ListRecordsByZone(ctx context.Context, zone string) ([]CorednsRecord, error) {
-	rows, err := q.db.QueryContext(ctx, listRecordsByZone, zone)
+type ListRecordsByZoneParams struct {
+	Zone   string
+	UserID uuid.UUID
+}
+
+func (q *Queries) ListRecordsByZone(ctx context.Context, arg ListRecordsByZoneParams) ([]CorednsRecord, error) {
+	rows, err := q.db.QueryContext(ctx, listRecordsByZone, arg.Zone, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +358,7 @@ func (q *Queries) ListRecordsByZone(ctx context.Context, zone string) ([]Coredns
 		var i CorednsRecord
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.Zone,
 			&i.Name,
 			&i.Ttl,
@@ -246,11 +381,12 @@ func (q *Queries) ListRecordsByZone(ctx context.Context, zone string) ([]Coredns
 const listZones = `-- name: ListZones :many
 SELECT DISTINCT zone 
 FROM coredns_records 
+WHERE user_id = $1
 ORDER BY zone
 `
 
-func (q *Queries) ListZones(ctx context.Context) ([]string, error) {
-	rows, err := q.db.QueryContext(ctx, listZones)
+func (q *Queries) ListZones(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listZones, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -279,8 +415,8 @@ SET
     ttl = $3,
     content = $4,
     record_type = $5
-WHERE id = $1 AND zone = $6
-RETURNING id, zone, name, ttl, content, record_type
+WHERE id = $1 AND zone = $6 AND user_id = $7
+RETURNING id, user_id, zone, name, ttl, content, record_type
 `
 
 type UpdateRecordParams struct {
@@ -290,6 +426,7 @@ type UpdateRecordParams struct {
 	Content    sql.NullString
 	RecordType string
 	Zone       string
+	UserID     uuid.UUID
 }
 
 func (q *Queries) UpdateRecord(ctx context.Context, arg UpdateRecordParams) (CorednsRecord, error) {
@@ -300,15 +437,48 @@ func (q *Queries) UpdateRecord(ctx context.Context, arg UpdateRecordParams) (Cor
 		arg.Content,
 		arg.RecordType,
 		arg.Zone,
+		arg.UserID,
 	)
 	var i CorednsRecord
 	err := row.Scan(
 		&i.ID,
+		&i.UserID,
 		&i.Zone,
 		&i.Name,
 		&i.Ttl,
 		&i.Content,
 		&i.RecordType,
+	)
+	return i, err
+}
+
+const validateAndConsumeOTP = `-- name: ValidateAndConsumeOTP :one
+UPDATE otp_codes
+SET consumed_at = NOW()
+WHERE id = (
+    SELECT otp_codes.id FROM otp_codes
+    WHERE otp_codes.email = $1 AND otp_codes.code = $2 AND otp_codes.consumed_at IS NULL AND otp_codes.expires_at > NOW()
+    ORDER BY otp_codes.created_at DESC
+    LIMIT 1
+)
+RETURNING id, email, code, expires_at, consumed_at, created_at
+`
+
+type ValidateAndConsumeOTPParams struct {
+	Email string
+	Code  string
+}
+
+func (q *Queries) ValidateAndConsumeOTP(ctx context.Context, arg ValidateAndConsumeOTPParams) (OtpCode, error) {
+	row := q.db.QueryRowContext(ctx, validateAndConsumeOTP, arg.Email, arg.Code)
+	var i OtpCode
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Code,
+		&i.ExpiresAt,
+		&i.ConsumedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }

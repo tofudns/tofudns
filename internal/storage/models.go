@@ -6,13 +6,33 @@ package storage
 
 import (
 	"database/sql"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 type CorednsRecord struct {
 	ID         int64
+	UserID     uuid.UUID
 	Zone       string
 	Name       string
 	Ttl        sql.NullInt32
 	Content    sql.NullString
 	RecordType string
+}
+
+type OtpCode struct {
+	ID         int32
+	Email      string
+	Code       string
+	ExpiresAt  time.Time
+	ConsumedAt sql.NullTime
+	CreatedAt  time.Time
+}
+
+type User struct {
+	ID        uuid.UUID
+	Email     string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

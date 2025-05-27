@@ -6,18 +6,29 @@ package storage
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 type Querier interface {
+	// OTP Authentication Queries
+	CreateOTP(ctx context.Context, arg CreateOTPParams) (OtpCode, error)
 	CreateRecord(ctx context.Context, arg CreateRecordParams) (CorednsRecord, error)
+	CreateUser(ctx context.Context, email string) (User, error)
 	DeleteRecord(ctx context.Context, arg DeleteRecordParams) error
+	GetLatestOTPByEmail(ctx context.Context, email string) (OtpCode, error)
+	// Records Queries
 	GetRecordByID(ctx context.Context, arg GetRecordByIDParams) (CorednsRecord, error)
-	ListRecords(ctx context.Context, zone string) ([]CorednsRecord, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
+	// User Queries
+	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
+	ListRecords(ctx context.Context, arg ListRecordsParams) ([]CorednsRecord, error)
 	ListRecordsByName(ctx context.Context, arg ListRecordsByNameParams) ([]CorednsRecord, error)
 	ListRecordsByType(ctx context.Context, arg ListRecordsByTypeParams) ([]CorednsRecord, error)
-	ListRecordsByZone(ctx context.Context, zone string) ([]CorednsRecord, error)
-	ListZones(ctx context.Context) ([]string, error)
+	ListRecordsByZone(ctx context.Context, arg ListRecordsByZoneParams) ([]CorednsRecord, error)
+	ListZones(ctx context.Context, userID uuid.UUID) ([]string, error)
 	UpdateRecord(ctx context.Context, arg UpdateRecordParams) (CorednsRecord, error)
+	ValidateAndConsumeOTP(ctx context.Context, arg ValidateAndConsumeOTPParams) (OtpCode, error)
 }
 
 var _ Querier = (*Queries)(nil)

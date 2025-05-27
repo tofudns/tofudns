@@ -2,11 +2,15 @@ package recordmanager
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net"
+
+	"github.com/google/uuid"
 )
 
 type Record struct {
 	ID         int64
+	UserID     uuid.UUID
 	Zone       string
 	Name       string
 	RecordType string
@@ -25,12 +29,39 @@ type Record struct {
 	CAA   *CAAData
 }
 
+// IPAddr wraps net.IP to provide custom JSON marshaling
+type IPAddr struct {
+	net.IP
+}
+
+// MarshalJSON converts the IP to a string for JSON
+func (ip IPAddr) MarshalJSON() ([]byte, error) {
+	if ip.IP == nil {
+		return json.Marshal("")
+	}
+	return json.Marshal(ip.IP.String())
+}
+
+// UnmarshalJSON converts a string to an IP for JSON
+func (ip *IPAddr) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == "" {
+		ip.IP = nil
+		return nil
+	}
+	ip.IP = net.ParseIP(s)
+	return nil
+}
+
 type AData struct {
-	Ip net.IP `json:"ip"`
+	Ip IPAddr `json:"ip"`
 }
 
 type AAAAData struct {
-	Ip net.IP `json:"ip"`
+	Ip IPAddr `json:"ip"`
 }
 
 type TXTData struct {

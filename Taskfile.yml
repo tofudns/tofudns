@@ -1,5 +1,9 @@
 version: '3'
 
+vars:
+  TOFUDNS_IMAGE: ghcr.io/tofudns/tofudns
+  DOCKER_TAG: latest
+
 tasks:
   generate:
     cmds:
@@ -17,6 +21,10 @@ tasks:
     cmds:
       - go build -o tofudns ./cmd/service/main.go
 
+  run:debug:
+    cmds:
+      - gow run ./cmd/service/main.go -e go -e html -e css -e js
+
   compose:
     cmds:
       - task: "compose:{{.CLI_ARGS}}"
@@ -33,10 +41,31 @@ tasks:
     cmds:
       - docker compose down
 
+  compose:prod:up:
+    cmds:
+      - docker compose -f docker-compose.prod.yml up -d
+
+  compose:prod:down:
+    cmds:
+      - docker compose -f docker-compose.prod.yml down
+
   run:
     cmds:
       - go mod tidy
       - air
+
+  docker:build:tofudns:
+    cmds:
+      - docker build -t {{.TOFUDNS_IMAGE}}:{{.DOCKER_TAG}} .
+
+  docker:push:tofudns:
+    cmds:
+      - docker push {{.TOFUDNS_IMAGE}}:{{.DOCKER_TAG}}
+
+  docker:all:
+    deps: [docker:build:tofudns]
+    cmds:
+      - task: docker:push:tofudns
 
   test:dig:
     cmds:

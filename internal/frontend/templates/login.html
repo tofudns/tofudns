@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+    <nav>
+        <a href="/">tofudns</a>
+    </nav>
+    <main>
+        <div class="zone-header">
+            Account Access
+        </div>
+        
+        <div class="record-section">
+            <h2>Log in to TofuDNS</h2>
+            <div style="padding: var(--space-4);">
+                {{if .Error}}
+                <div class="error-message">
+                    {{.Error}}
+                </div>
+                {{end}}
+                
+                <form method="POST" action="/auth/login">
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" class="record-input" required>
+                    </div>
+                    <div class="form-group" style="margin-top: var(--space-4);">
+                        <button type="submit" class="btn-add" style="max-width: 200px; margin: 0 auto;">Send Login Link</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</body>
+</html> 

@@ -4,26 +4,40 @@
     <body>
         <nav>
             <a href="/">tofudns</a>
+            <a href="/auth/logout" class="logout-btn">Logout</a>
         </nav>
         <main>
-            <div style="margin-bottom: 32px;">
-                <h2>add new zone</h2>
-                <form action="/new/zone" method="post">
-                    <label>zone:</label>
-                    <input type="text" name="zone" placeholder="example.com">
-                    <input type="submit" value="submit">
-                </form>
+            <div class="zone-header">
+                DNS Zones
+            </div>
+            
+            <!-- Add New Zone -->
+            <div class="record-section">
+                <h2>Add New Zone</h2>
+                <div class="record-grid">
+                    <form action="/new/zone" method="post" class="add-record-form a-record">
+                        <input type="text" name="zone" placeholder="example.com" class="record-input" />
+                        <div class="actions">
+                            <button type="submit" class="btn-add">Add Zone</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
-            <div>
-                <h2>zone list</h2>
-                <ul>
+            <!-- Zone List -->
+            <div class="record-section">
+                <h2>Zone List</h2>
+                <div class="record-grid">
+                    <div class="grid-header a-record">
+                        <div>Domain</div>
+                    </div>
+                    
                     {{range .Zones}}
-                    <li>
-                        <a href="/zones/{{.}}">{{.}}</a>
-                    </li>
+                    <div class="record-form a-record">
+                        <a href="/zones/{{.}}" style="padding: var(--space-2) var(--space-4); display: block; text-decoration: none; color: var(--gray-800); font-weight: 500;">{{.}}</a>
+                    </div>
                     {{end}}
-                </ul>
+                </div>
             </div>
         </main>
     </body>
