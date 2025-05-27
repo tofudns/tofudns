@@ -44,13 +44,14 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          # Override the tag with the commit SHA
-          export DOCKER_TAG=${{ env.DOCKER_TAG }}
-          # Build and push the image
-          task docker:build:tofudns
-          task docker:push:tofudns
-          # Also tag as latest
+          # Build the image with SHA tag
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }} .
+          
+          # Tag the same image as latest
           docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          
+          # Push both tags
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DOCKER_TAG }}
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy:
