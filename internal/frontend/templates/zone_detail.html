@@ -224,11 +224,6 @@
                     }
                 });
                 if (updateBtn) updateBtn.disabled = !hasChanges;
-                if (hasChanges) {
-                    form.classList.add('bg-blue-50');
-                } else {
-                    form.classList.remove('bg-blue-50');
-                }
             }
             function handleServerValidationErrors(form, errorResponse) {
                 clearError(form);
@@ -293,9 +288,6 @@
                     originalValues.set(recordId, values);
                     updateBtn.textContent = 'Update';
                     updateBtn.disabled = true;
-                    form.classList.remove('bg-blue-50');
-                    form.classList.add('bg-green-50');
-                    setTimeout(() => form.classList.remove('bg-green-50'), 1000);
                 })
                 .catch(errorData => {
                     handleServerValidationErrors(form, errorData);
