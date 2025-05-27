@@ -41,7 +41,23 @@ func New(
 	emailService EmailService,
 	jwtSecret string,
 ) (*Service, error) {
-	tmpl, err := template.ParseFS(templateFS, "templates/*.html")
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+		"eq":  func(a, b interface{}) bool { return a == b },
+		"len": func(x interface{}) int {
+			switch v := x.(type) {
+			case string:
+				return len(v)
+			case []interface{}:
+				return len(v)
+			case []string:
+				return len(v)
+			default:
+				return 0
+			}
+		},
+		"lower": func(s string) string { return strings.ToLower(s) },
+	}).ParseFS(templateFS, "templates/*.html")
 	if err != nil {
 		return nil, err
 	}

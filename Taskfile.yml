@@ -23,7 +23,7 @@ tasks:
 
   run:debug:
     cmds:
-      - gow run ./cmd/service/main.go -e go -e html -e css -e js
+      - gow -e go,html,css,js,mod,sql run ./cmd/service/main.go
 
   compose:
     cmds:

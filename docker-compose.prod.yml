@@ -26,6 +26,7 @@ services:
 
   tofudns:
     image: ghcr.io/tofudns/tofudns:latest
+    container_name: tofudns-app
     depends_on:
       - postgres
       - coredns
@@ -43,6 +44,7 @@ services:
 
   traefik:
     image: traefik:v3.0
+    container_name: traefik
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"

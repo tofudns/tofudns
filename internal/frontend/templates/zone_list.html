@@ -1,40 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
     {{template "head" .}}
-    <body>
-        <nav>
-            <a href="/">tofudns</a>
-            <a href="/auth/logout" class="logout-btn">Logout</a>
-        </nav>
-        <main>
-            <div class="zone-header">
-                DNS Zones
+    <body class="bg-gray-50 font-sans text-gray-900">
+        <nav class="bg-white border-b border-gray-200 py-3 px-4 sticky top-0 z-10">
+            <div class="max-w-3xl mx-auto flex justify-between items-center">
+                <a href="/" class="font-bold text-lg text-gray-900">tofudns</a>
+                <a href="/auth/logout" class="text-gray-500 border border-gray-300 rounded px-3 py-1 text-sm hover:text-gray-900 hover:border-gray-400 transition">Logout</a>
             </div>
-            
+        </nav>
+        <main class="max-w-3xl mx-auto py-10">
+            <div class="text-2xl font-bold mb-8">dns zones</div>
             <!-- Add New Zone -->
-            <div class="record-section">
-                <h2>Add New Zone</h2>
-                <div class="record-grid">
-                    <form action="/new/zone" method="post" class="add-record-form a-record">
-                        <input type="text" name="zone" placeholder="example.com" class="record-input" />
-                        <div class="actions">
-                            <button type="submit" class="btn-add">Add Zone</button>
-                        </div>
+            <div class="bg-white rounded shadow-sm border border-gray-200 mb-6">
+                <h2 class="px-6 py-3 text-lg font-semibold border-b border-gray-100 bg-gray-50">add new zone</h2>
+                <div class="p-6">
+                    <form action="/new/zone" method="post" class="flex gap-2 items-start w-full">
+                        <input type="text" name="zone" placeholder="example.com" class="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-200" required />
+                        <button type="submit" class="bg-black text-white rounded px-4 py-2 text-sm font-medium hover:bg-gray-800 transition enabled:bg-black enabled:text-white disabled:bg-gray-200 disabled:text-gray-400">Add Zone</button>
                     </form>
                 </div>
             </div>
-
             <!-- Zone List -->
-            <div class="record-section">
-                <h2>Zone List</h2>
-                <div class="record-grid">
-                    <div class="grid-header a-record">
-                        <div>Domain</div>
-                    </div>
-                    
-                    {{range .Zones}}
-                    <div class="record-form a-record">
-                        <a href="/zones/{{.}}" style="padding: var(--space-2) var(--space-4); display: block; text-decoration: none; color: var(--gray-800); font-weight: 500;">{{.}}</a>
+            <div class="bg-white rounded shadow-sm border border-gray-200">
+                <h2 class="px-6 py-3 text-lg font-semibold border-b border-gray-100 bg-gray-50">your zones</h2>
+                <div class="py-2">
+                    {{ $zones := .Zones }}
+                    {{ range $i, $zone := $zones }}
+                    {{ $last := eq (add $i 1) (len $zones) }}
+                    <a href="/zones/{{$zone}}" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium {{if not $last}}border-b border-gray-100{{end}} hover:bg-gray-100 transition">
+                        <span>{{$zone}}</span>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                    {{end}}
+                    {{if not .Zones}}
+                    <div class="text-center text-gray-400 py-10">
+                        <p class="mb-2">No zones configured yet.</p>
+                        <p class="text-sm">Add your first zone above to get started.</p>
                     </div>
                     {{end}}
                 </div>
