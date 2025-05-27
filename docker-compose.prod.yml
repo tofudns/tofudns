@@ -29,6 +29,8 @@ services:
     depends_on:
       - postgres
       - coredns
+    env_file:
+      - .env
     restart: always
     networks:
       - tofudns
