@@ -21,10 +21,6 @@ tasks:
     cmds:
       - go build -o tofudns ./cmd/service/main.go
 
-  run:debug:
-    cmds:
-      - gow -e go,html,css,js,mod,sql run ./cmd/service/main.go
-
   compose:
     cmds:
       - task: "compose:{{.CLI_ARGS}}"
@@ -52,7 +48,11 @@ tasks:
   run:
     cmds:
       - go mod tidy
-      - air
+      - go run ./cmd/service/main.go
+
+  run:debug:
+    cmds:
+      - gow -e go,html,css,js,mod,sql run ./cmd/service/main.go
 
   docker:build:tofudns:
     cmds:

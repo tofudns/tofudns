@@ -32,7 +32,7 @@ type Config struct {
 	LogLevel       string `envconfig:"LOG_LEVEL" default:"debug"`
 	DatabaseDriver string `envconfig:"DATABASE_DRIVER" default:"postgres"`
 	DatabaseURL    string `envconfig:"DATABASE_URL" default:"postgres://tofudns:tofudns@localhost:5432/tofudns?sslmode=disable"`
-	JWTSecret      string `envconfig:"JWT_SECRET" default:"tofudns_jwt_secret_replace_in_production"`
+	JWTSecret      string `envconfig:"JWT_SECRET" required:"true"`
 	Postmark       struct {
 		ServerToken string `envconfig:"POSTMARK_SERVER_TOKEN" required:"true"`
 		FromEmail   string `envconfig:"POSTMARK_EMAIL_FROM" default:"noreply@tofudns.net"`
